@@ -32,3 +32,35 @@ impl ToString for OpenAIModel {
     }
   }
 }
+
+impl OpenAIModel {
+  pub(crate) fn ask(self, system_prompt: &str, prompt: &str) -> Result<String> {
+    let client = Client::new();
+
+    let api_key =
+      std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not set");
+
+    let url = "https://api.openai.com/v1/chat/completions";
+
+    let response = client
+      .post(url)
+      .header("Authorization", format!("Bearer {}", api_key))
+      .json(&json!({
+          "model": self.to_string(),
+          "messages": [
+              {"role": "system", "content": system_prompt},
+              {"role": "user", "content": prompt}
+          ]
+      }))
+      .send()?;
+
+    let json: serde_json::Value = response.json()?;
+
+    Ok(
+      json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap()
+        .to_string(),
+    )
+  }
+}

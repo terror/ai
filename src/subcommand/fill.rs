@@ -55,7 +55,7 @@ impl Fill {
         hole,
         &combined_code,
         &updated_file_code,
-        options.model.to_string(),
+        options.model.clone(),
       )?;
     }
 
@@ -70,7 +70,7 @@ impl Fill {
     hole: &str,
     combined_code: &str,
     current_code: &str,
-    model: String,
+    model: OpenAIModel,
   ) -> Result<String> {
     println!("Generating completion for hole: '{}'...", hole);
 
@@ -81,7 +81,7 @@ impl Fill {
 
     let new_code = current_code.replace(
       hole,
-      &Self::extract_completion(&ask(&system_prompt, &prompt, &model)?)?,
+      &Self::extract_completion(&model.ask(&system_prompt, &prompt)?)?,
     );
 
     let diff = TextDiff::from_lines(current_code, &new_code);
