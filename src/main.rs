@@ -13,18 +13,31 @@ use {
   },
 };
 
-impl Arguments {
-  fn run(self) -> Result<()> {
-    match self.subcommand {
-      Subcommand::Fill(fill) => fill.run(),
-    }
-  }
+#[derive(Debug, Parser)]
+struct Options {
+  #[clap(
+    long,
+    short,
+    help = "Model name (default: 'gpt-3.5-turbo')",
+    default_value = "gpt-3.5-turbo"
+  )]
+  model: OpenAIModel,
 }
 
 #[derive(Debug, Parser)]
 struct Arguments {
+  #[clap(flatten)]
+  options: Options,
   #[clap(subcommand)]
   subcommand: Subcommand,
+}
+
+impl Arguments {
+  fn run(self) -> Result<()> {
+    match self.subcommand {
+      Subcommand::Fill(fill) => fill.run(self.options),
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -66,13 +79,6 @@ struct Fill {
   file: String,
   #[clap(long, short, help = "Context file paths", num_args = 0..)]
   context: Vec<PathBuf>,
-  #[clap(
-    long,
-    short,
-    help = "Model name (default: 'gpt-3.5-turbo')",
-    default_value = "gpt-3.5-turbo"
-  )]
-  model: OpenAIModel,
 }
 
 #[derive(Debug, Parser)]
@@ -81,7 +87,7 @@ enum Subcommand {
 }
 
 impl Fill {
-  fn run(self) -> Result<()> {
+  fn run(self, options: Options) -> Result<()> {
     let code = fs::read_to_string(&self.file)?;
 
     let mut context_code = String::new();
@@ -101,7 +107,7 @@ impl Fill {
     println!("Analysis complete:");
     println!("  - Holes found: {:?}", holes);
     println!("  - Total token count: {}", tokens);
-    println!("  - Using model: {}", self.model.to_string());
+    println!("  - Using model: {}", options.model.to_string());
 
     let mut updated_file_code = code.clone();
 
@@ -111,7 +117,7 @@ impl Fill {
         "??",
         &combined_code,
         &code,
-        self.model.to_string(),
+        options.model.to_string(),
       )?;
     } else {
       println!("\nProcessing multiple holes...");
@@ -126,7 +132,7 @@ impl Fill {
           hole,
           &combined_code,
           &updated_file_code,
-          self.model.to_string(),
+          options.model.to_string(),
         )?;
       }
     }
