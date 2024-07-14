@@ -1,103 +1,17 @@
-use anyhow::{anyhow, Result};
-use clap::Parser;
-use dialoguer::{theme::ColorfulTheme, Confirm};
-use regex::Regex;
-use reqwest::blocking::Client;
-use serde_json::json;
-use similar::{ChangeTag, TextDiff};
-use std::fs;
-use std::path::{Path, PathBuf};
-
-const SYSTEM_PROMPT: &str = r#"
-You are a HOLE FILLER. You are provided with a file containing holes, formatted
-as '{{HOLE_NAME}}'. Your TASK is to complete with a string to replace this hole
-with, inside a <COMPLETION/> XML tag, including context-aware indentation, if
-needed. All completions MUST be truthful, accurate, well-written and correct.
-
-## EXAMPLE QUERY:
-
-<QUERY>
-function sum_evens(lim) {
-  var sum = 0;
-  for (var i = 0; i < lim; ++i) {
-    {{FILL_HERE}}
-  }
-  return sum;
-}
-</QUERY>
-
-## CORRECT COMPLETION
-
-<COMPLETION>if (i % 2 === 0) {
-      sum += i;
-    }</COMPLETION>
-
-## EXAMPLE QUERY:
-
-<QUERY>
-def sum_list(lst):
-  total = 0
-  for x in lst:
-  {{FILL_HERE}}
-  return total
-
-print sum_list([1, 2, 3])
-</QUERY>
-
-## CORRECT COMPLETION:
-
-<COMPLETION>  total += x</COMPLETION>
-
-## EXAMPLE QUERY:
-
-<QUERY>
-// data Tree a = Node (Tree a) (Tree a) | Leaf a
-
-// sum :: Tree Int -> Int
-// sum (Node lft rgt) = sum lft + sum rgt
-// sum (Leaf val)     = val
-
-// convert to TypeScript:
-{{FILL_HERE}}
-</QUERY>
-
-## CORRECT COMPLETION:
-
-<COMPLETION>type Tree<T>
-  = {$:"Node", lft: Tree<T>, rgt: Tree<T>}
-  | {$:"Leaf", val: T};
-
-function sum(tree: Tree<number>): number {
-  switch (tree.$) {
-    case "Node":
-      return sum(tree.lft) + sum(tree.rgt);
-    case "Leaf":
-      return tree.val;
-  }
-}</COMPLETION>
-
-## EXAMPLE QUERY:
-
-The 2nd {{FILL_HERE}} is Saturn.
-
-## CORRECT COMPLETION:
-
-<COMPLETION>gas giant</COMPLETION>
-
-## EXAMPLE QUERY:
-
-function hypothenuse(a, b) {
-  return Math.sqrt({{FILL_HERE}}b ** 2);
-}
-
-## CORRECT COMPLETION:
-
-<COMPLETION>a ** 2 + </COMPLETION>
-
-## IMPORTANT:
-
-- Answer ONLY with the <COMPLETION/> block. Do NOT include anything outside it.
-"#;
+use {
+  anyhow::{anyhow, Result},
+  clap::Parser,
+  dialoguer::{theme::ColorfulTheme, Confirm},
+  regex::Regex,
+  reqwest::blocking::Client,
+  serde_json::json,
+  similar::{ChangeTag, TextDiff},
+  std::{
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+  },
+};
 
 impl Arguments {
   fn run(self) -> Result<()> {
@@ -112,8 +26,6 @@ struct Arguments {
   #[clap(subcommand)]
   subcommand: Subcommand,
 }
-
-use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 enum OpenAIModel {
@@ -155,7 +67,8 @@ struct Fill {
   #[clap(long, short, help = "Context file paths", num_args = 0..)]
   context: Vec<PathBuf>,
   #[clap(
-    long, short,
+    long,
+    short,
     help = "Model name (default: 'gpt-3.5-turbo')",
     default_value = "gpt-3.5-turbo"
   )]
@@ -232,23 +145,28 @@ impl Fill {
     model: String,
   ) -> Result<String> {
     println!("Generating completion for hole: '{}'...", hole);
-    let prompt = format!("<QUERY>\n{}\n</QUERY>", combined_code);
 
-    let answer = ask(&prompt, &model)?;
+    let (prompt, system_prompt) = (
+      format!("<QUERY>\n{}\n</QUERY>", combined_code),
+      fs::read_to_string("prompts/fill.txt")?,
+    );
 
-    let completion = extract_completion(&answer)?;
-
-    let new_code = current_code.replace(hole, &completion);
+    let new_code = current_code.replace(
+      hole,
+      &extract_completion(&ask(&system_prompt, &prompt, &model)?)?,
+    );
 
     let diff = TextDiff::from_lines(current_code, &new_code);
 
     println!("Proposed changes for hole '{}':", hole);
+
     for change in diff.iter_all_changes() {
       let (sign, style) = match change.tag() {
         ChangeTag::Delete => ("-", console::Style::new().red()),
         ChangeTag::Insert => ("+", console::Style::new().green()),
         ChangeTag::Equal => (" ", console::Style::new()),
       };
+
       print!("{}{}", style.apply_to(sign).bold(), style.apply_to(change));
     }
 
@@ -306,7 +224,7 @@ fn find_holes(text: &str) -> Vec<String> {
   }
 }
 
-fn ask(prompt: &str, model: &str) -> Result<String> {
+fn ask(system_prompt: &str, prompt: &str, model: &str) -> Result<String> {
   let client = Client::new();
 
   let api_key =
@@ -320,7 +238,7 @@ fn ask(prompt: &str, model: &str) -> Result<String> {
     .json(&json!({
         "model": model,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ]
     }))
