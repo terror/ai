@@ -54,12 +54,12 @@ impl OpenAIModel {
       }))
       .send()?;
 
-    let json: serde_json::Value = response.json()?;
+    let json = response.json::<serde_json::Value>()?;
 
     Ok(
       json["choices"][0]["message"]["content"]
         .as_str()
-        .unwrap()
+        .ok_or(anyhow!("Could not get completion from AI response"))?
         .to_string(),
     )
   }
