@@ -12,18 +12,15 @@ impl Fill {
   pub(crate) fn run(self, options: Options) -> Result<()> {
     let code = fs::read_to_string(&self.file)?;
 
-    let mut context_code = String::new();
-
-    for context_file in &self.context {
-      let content = fs::read_to_string(context_file)?;
-      context_code.push_str(&content);
-      context_code.push('\n');
-    }
+    let context_code = self
+      .context
+      .iter()
+      .map(|path| fs::read_to_string(path))
+      .collect::<Result<Vec<_>, _>>()?
+      .join("\n");
 
     let combined_code =
       Self::add_context(&format!("{}\n{}", context_code, code), &self.file)?;
-
-    let tokens = combined_code.split_whitespace().count();
 
     let holes = Regex::new(r"\{\{\w+\}\}")?
       .find_iter(&combined_code)
@@ -35,20 +32,15 @@ impl Fill {
       return Ok(());
     }
 
+    let tokens = combined_code.split_whitespace().count();
+
     println!("Holes found: {:?}", holes);
     println!("Total token count: {}", tokens);
     println!("Using model: {}", options.model.to_string());
 
-    let mut updated_file_code = code.clone();
-
-    for hole in holes {
-      updated_file_code = Self::process_hole(
-        &hole,
-        &combined_code,
-        &updated_file_code,
-        options.model.clone(),
-      )?;
-    }
+    let updated_file_code = holes.into_iter().try_fold(code, |acc, hole| {
+      Self::process_hole(&hole, &combined_code, &acc, options.model.clone())
+    })?;
 
     fs::write(&self.file, &updated_file_code)?;
 
@@ -58,9 +50,7 @@ impl Fill {
   }
 
   fn extract_completion(answer: &str) -> Result<String> {
-    let regex = Regex::new(r"<COMPLETION>([\s\S]*?)</COMPLETION>")?;
-
-    regex
+    Regex::new(r"<COMPLETION>([\s\S]*?)</COMPLETION>")?
       .captures(answer)
       .and_then(|cap| cap.get(1))
       .map(|m| m.as_str().to_string())
@@ -100,7 +90,12 @@ impl Fill {
 
     let (prompt, system_prompt) = (
       format!("<QUERY>\n{}\n</QUERY>", combined_code),
-      fs::read_to_string("prompts/fill.txt")?,
+      PROMPT_DIR
+        .get_file("fill.txt")
+        .ok_or(anyhow!("Failed to get file from prompt directory"))?
+        .contents_utf8()
+        .ok_or(anyhow!("Failed to get file contents from prompt directory"))?
+        .to_string(),
     );
 
     let new_code = current_code.replace(
@@ -112,7 +107,7 @@ impl Fill {
 
     println!("Proposed changes for hole '{}':", hole);
 
-    for change in diff.iter_all_changes() {
+    diff.iter_all_changes().for_each(|change| {
       let (sign, style) = match change.tag() {
         ChangeTag::Delete => ("-", console::Style::new().red()),
         ChangeTag::Insert => ("+", console::Style::new().green()),
@@ -120,7 +115,7 @@ impl Fill {
       };
 
       print!("{}{}", style.apply_to(sign).bold(), style.apply_to(change));
-    }
+    });
 
     let confirmed = Confirm::with_theme(&ColorfulTheme::default())
       .with_prompt("Do you want to apply these changes?")

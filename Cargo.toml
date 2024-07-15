@@ -9,6 +9,7 @@ clap = { version = "4.5.9", features = ["derive"] }
 console = "0.15.8"
 dialoguer = "0.11.0"
 dotenv = "0.15.0"
+include_dir = "0.7.4"
 regex = "1.10.5"
 reqwest = { version = "0.12.5", features = ["blocking", "json"] }
 serde_json = "1.0.120"

@@ -7,6 +7,7 @@ use {
   clap::Parser,
   dialoguer::{theme::ColorfulTheme, Confirm},
   dotenv::dotenv,
+  include_dir::{include_dir, Dir},
   regex::Regex,
   reqwest::blocking::Client,
   serde_json::json,
@@ -18,6 +19,8 @@ use {
     str::FromStr,
   },
 };
+
+static PROMPT_DIR: Dir = include_dir!("prompts");
 
 mod arguments;
 mod model;

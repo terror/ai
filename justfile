@@ -4,6 +4,7 @@ export EDITOR := 'nvim'
 
 alias b := build
 alias f := fmt
+alias r := run
 
 default:
   just --list
@@ -16,3 +17,9 @@ fmt:
 
 forbid:
   ./bin/forbid
+
+run *args:
+  cargo run -- {{args}}
+
+watch +COMMAND='test':
+  cargo watch --clear --exec "{{COMMAND}}"
