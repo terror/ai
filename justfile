@@ -18,6 +18,9 @@ fmt:
 forbid:
   ./bin/forbid
 
+install:
+  cargo install --path .
+
 run *args:
   cargo run -- {{args}}
 
