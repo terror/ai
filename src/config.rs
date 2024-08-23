@@ -18,7 +18,7 @@ impl Default for Config {
 impl Config {
   const CONFIG_FILE_NAME: &'static str = "config.json";
 
-  pub(crate) fn has_key(&self, service: Service) -> bool {
+  pub(crate) fn has_key(&self, service: &Service) -> bool {
     match service {
       Service::Anthropic => !self.anthropic_api_key.is_empty(),
       Service::OpenAI => !self.open_ai_api_key.is_empty(),

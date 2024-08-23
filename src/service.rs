@@ -26,3 +26,12 @@ impl ToString for Service {
     }
   }
 }
+
+impl Service {
+  pub(crate) fn url<'a>(&self) -> &'a str {
+    match self {
+      Service::OpenAI => "https://api.openai.com/v1/chat/completions",
+      _ => todo!()
+    }
+  }
+}

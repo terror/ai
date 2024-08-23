@@ -3,7 +3,7 @@ use {
     arguments::Arguments, config::Config, model::Model, options::Options,
     service::Service, subcommand::Subcommand,
   },
-  anyhow::{anyhow, bail},
+  anyhow::{anyhow, ensure},
   clap::Parser,
   dialoguer::{theme::ColorfulTheme, Confirm},
   dotenv::dotenv,

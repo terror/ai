@@ -46,22 +46,22 @@ impl Into<Service> for Model {
 
 impl Model {
   pub(crate) fn ask(self, system_prompt: &str, prompt: &str) -> Result<String> {
-    let service: Service = self.clone().into();
+    let service = Into::<Service>::into(self.clone());
+
+    let config = Config::load()?;
+
+    ensure!(
+      config.has_key(&service),
+      "no api key set for {}",
+      service.to_string()
+    );
+
+    let client = Client::new();
 
     match service {
       Service::OpenAI => {
-        let client = Client::new();
-
-        let config = Config::load()?;
-
-        if !config.has_key(service) {
-          bail!("no api key set for openai");
-        }
-
-        let url = "https://api.openai.com/v1/chat/completions";
-
         let response = client
-          .post(url)
+          .post(service.url())
           .header(
             "Authorization",
             format!("Bearer {}", config.open_ai_api_key),
