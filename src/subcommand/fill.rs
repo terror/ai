@@ -9,7 +9,7 @@ pub(crate) struct Fill {
 }
 
 impl Fill {
-  pub(crate) fn run(self, options: Options) -> Result<()> {
+  pub(crate) fn run(self, options: Options) -> Result {
     let code = fs::read_to_string(&self.file)?;
 
     let context_code = self
@@ -84,7 +84,7 @@ impl Fill {
     hole: &str,
     combined_code: &str,
     current_code: &str,
-    model: OpenAIModel,
+    model: Model,
   ) -> Result<String> {
     println!("Generating completion for hole: '{}'...", hole);
 

@@ -1,15 +1,16 @@
 use {
   crate::{
-    arguments::Arguments, model::OpenAIModel, options::Options,
-    subcommand::Subcommand,
+    arguments::Arguments, config::Config, model::Model, options::Options,
+    service::Service, subcommand::Subcommand,
   },
-  anyhow::{anyhow, Result},
+  anyhow::{anyhow, bail},
   clap::Parser,
   dialoguer::{theme::ColorfulTheme, Confirm},
   dotenv::dotenv,
   include_dir::{include_dir, Dir},
   regex::Regex,
   reqwest::blocking::Client,
+  serde::{Deserialize, Serialize},
   serde_json::json,
   similar::{ChangeTag, TextDiff},
   std::{
@@ -18,14 +19,19 @@ use {
     process,
     str::FromStr,
   },
+  xdg::BaseDirectories,
 };
 
 static PROMPT_DIR: Dir = include_dir!("prompts");
 
 mod arguments;
+mod config;
 mod model;
 mod options;
+mod service;
 mod subcommand;
+
+type Result<T = (), E = anyhow::Error> = std::result::Result<T, E>;
 
 fn main() {
   dotenv().ok();

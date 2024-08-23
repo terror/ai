@@ -8,5 +8,5 @@ pub(crate) struct Options {
     help = "Model name (default: 'gpt-3.5-turbo')",
     default_value = "gpt-3.5-turbo"
   )]
-  pub(crate) model: OpenAIModel,
+  pub(crate) model: Model,
 }
