@@ -1,5 +1,7 @@
 ## ai
 
+[![CI](https://github.com/terror/ai/actions/workflows/ci.yml/badge.svg)](https://github.com/terror/ai/actions/workflows/ci.yml)
+
 **ai** contains the source code for a custom tool I use to boost my productivity
 while coding.
 
