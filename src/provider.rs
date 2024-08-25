@@ -31,7 +31,7 @@ impl Provider {
   pub(crate) fn url<'a>(&self) -> &'a str {
     match self {
       Provider::OpenAI => "https://api.openai.com/v1/chat/completions",
-      _ => todo!()
+      _ => todo!(),
     }
   }
 }

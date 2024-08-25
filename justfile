@@ -13,7 +13,7 @@ build:
   cargo build
 
 fmt:
-  cargo +nightly fmt
+  cargo fmt
 
 forbid:
   ./bin/forbid
