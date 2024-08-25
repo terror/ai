@@ -18,10 +18,10 @@ impl Default for Config {
 impl Config {
   const CONFIG_FILE_NAME: &'static str = "config.json";
 
-  pub(crate) fn has_key(&self, service: &Service) -> bool {
+  pub(crate) fn has_key(&self, service: &Provider) -> bool {
     match service {
-      Service::Anthropic => !self.anthropic_api_key.is_empty(),
-      Service::OpenAI => !self.open_ai_api_key.is_empty(),
+      Provider::Anthropic => !self.anthropic_api_key.is_empty(),
+      Provider::OpenAI => !self.open_ai_api_key.is_empty(),
     }
   }
 
@@ -49,10 +49,10 @@ impl Config {
     Ok(())
   }
 
-  pub(crate) fn set_key(&mut self, service: Service, api_key: String) {
+  pub(crate) fn set_key(&mut self, service: Provider, api_key: String) {
     match service {
-      Service::Anthropic => self.anthropic_api_key = api_key,
-      Service::OpenAI => self.open_ai_api_key = api_key,
+      Provider::Anthropic => self.anthropic_api_key = api_key,
+      Provider::OpenAI => self.open_ai_api_key = api_key,
     }
   }
 }

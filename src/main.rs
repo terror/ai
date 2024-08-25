@@ -1,7 +1,7 @@
 use {
   crate::{
     arguments::Arguments, config::Config, model::Model, options::Options,
-    service::Service, subcommand::Subcommand,
+    provider::Provider, subcommand::Subcommand,
   },
   anyhow::{anyhow, ensure},
   clap::Parser,
@@ -28,7 +28,7 @@ mod arguments;
 mod config;
 mod model;
 mod options;
-mod service;
+mod provider;
 mod subcommand;
 
 type Result<T = (), E = anyhow::Error> = std::result::Result<T, E>;

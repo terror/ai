@@ -7,7 +7,7 @@ pub(crate) struct SetKey {
     help = "Service to set the API key for",
     required = true
   )]
-  service: Service,
+  service: Provider,
   #[clap(required = true)]
   api_key: String,
 }

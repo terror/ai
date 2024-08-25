@@ -33,20 +33,20 @@ impl ToString for Model {
   }
 }
 
-impl Into<Service> for Model {
-  fn into(self) -> Service {
+impl Into<Provider> for Model {
+  fn into(self) -> Provider {
     match self {
       Model::GPT4
       | Model::GPT4_32K
       | Self::GPT3_5Turbo
-      | Self::GPT3_5turbo16k => Service::OpenAI,
+      | Self::GPT3_5turbo16k => Provider::OpenAI,
     }
   }
 }
 
 impl Model {
   pub(crate) fn ask(self, system_prompt: &str, prompt: &str) -> Result<String> {
-    let service = Into::<Service>::into(self.clone());
+    let service = Into::<Provider>::into(self.clone());
 
     let config = Config::load()?;
 
@@ -59,7 +59,7 @@ impl Model {
     let client = Client::new();
 
     match service {
-      Service::OpenAI => {
+      Provider::OpenAI => {
         let response = client
           .post(service.url())
           .header(
